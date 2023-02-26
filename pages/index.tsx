@@ -2,13 +2,19 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
 import Header from "../components/Header";
-import { useAddress, useContract, useContractRead } from "@thirdweb-dev/react";
+import {
+  useAddress,
+  useContract,
+  useContractRead,
+  useContractWrite,
+} from "@thirdweb-dev/react";
 import Login from "../components/Login";
 import Loading from "../components/Loading";
 import { useState } from "react";
 import { ethers } from "ethers";
 import { currency } from "../constants";
 import CountdownTimer from "../components/CountdownTimer";
+import { toast } from "react-hot-toast";
 
 const Home: NextPage = () => {
   const [quantity, setQuantity] = useState<number>(1);
@@ -32,7 +38,34 @@ const Home: NextPage = () => {
     "ticketCommission"
   );
   const { data: expiration } = useContractRead(contract, "expiration");
+  const { mutateAsync: BuyTickets } = useContractWrite(contract, "BuyTickets");
   // ---
+
+  // Button handler
+  const handleClick = async () => {
+    if (!ticketPrice) return;
+
+    const notification = toast.loading("Buying your tickets...");
+
+    try {
+      const data = await BuyTickets([
+        {
+          value: ethers.utils.parseEther(
+            (
+              Number(ethers.utils.formatEther(ticketPrice)) * quantity
+            ).toString()
+          ),
+        },
+      ]);
+
+      toast.success("SUCCESS! Your purchased tickets are on their way!", {
+        id: notification,
+      });
+    } catch (err) {
+      toast.error("WHOOPS! Something went wrong!", { id: notification });
+    }
+  };
+  // ----
 
   if (isLoading) return <Loading />;
 
@@ -132,6 +165,7 @@ const Home: NextPage = () => {
               </div>
 
               <button
+                onClick={handleClick}
                 disabled={
                   expiration?.toString() < Date.now().toString() ||
                   remainingTickets?.toNumber() === 0
