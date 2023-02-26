@@ -11,9 +11,15 @@ import {
   useContractCall,
 } from "@thirdweb-dev/react";
 import Login from "../components/Login";
+import Loading from "../components/Loading";
 
 const Home: NextPage = () => {
   const address = useAddress();
+  const { contract, isLoading } = useContract(
+    process.env.NEXT_PUBLIC_LOTTERY_CONTRACT_ADDRESS
+  );
+
+  if (isLoading) return <Loading />;
 
   if (!address) return <Login />;
 
